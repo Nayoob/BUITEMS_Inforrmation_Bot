@@ -1,3 +1,5 @@
+main
+
 import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -23,8 +25,8 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 class Question(BaseModel):
     question: str
+    history: list = []
 
-chat_history = []
 
 @app.post("/ask")
 def ask(body: Question):
@@ -33,54 +35,36 @@ def ask(body: Question):
     chunks = retrieve(question)
     context = "\n\n".join(chunks)
 
-    # Keep only last 4 messages to avoid token overflow
-    if len(chat_history) > 4:
-        chat_history.clear()
+    system_prompt = """You are BUITEMS Assistant, an official AI chatbot for 
+Balochistan University of Information Technology, Engineering and Management Sciences.
 
-    system_prompt = """You are BUITEMS Assistant, an official AI chatbot for
-Balochistan University of Information Technology, Engineering and Management Sciences (BUITEMS).
+You help students and faculty with:
+- Admissions requirements and procedures
+- Department and program information
+- Fee structure and scholarships
+- Rules, regulations and policies
+- Campus facilities and services
+- Important dates and deadlines
+- Contact information
 
-You have knowledge about the following areas:
-- Admissions: admission process, merit criteria, entry tests, important dates
-- Fee Structure: semester fees, registration fees, security deposits
-- Faculties and Programs:
-    * FICT - Faculty of Information & Communication Technology (CS, SE, IT, Computer Engineering, Electrical, Electronic, Telecom Engineering)
-    * FOE  - Faculty of Engineering (Civil, Mechanical, Chemical, Geological, Mining, Petroleum & Gas, Textile Engineering, Architecture)
-    * FMS  - Faculty of Management Sciences (Management Sciences, Public Administration)
-    * FABS - Faculty of Applied Biosciences (Chemistry, Physics, Mathematics, Biology)
-    * FLSI - Faculty of Life Sciences & Informatics (Biotechnology, Microbiology, Environmental Science)
-    * FSSH - Faculty of Social Sciences & Humanities (Education, English, Psychology, Mass Communication, International Relations)
-- Scholarships: HEC scholarships, need based, merit based
-- Sub Campuses: Muslim Bagh campus, Zhob campus
-- General: university overview, history, facilities, contacts
-
-Strict Rules:
+Rules:
 - Answer ONLY from the provided context
-- If the answer is not in context say exactly:
-  "I don't have that information right now. Please contact BUITEMS admissions office directly at admissions@buitms.edu.pk"
+- If not in context say: 'I don't have that information. Please contact BUITEMS directly at info@buitms.edu.pk'
 - Answer in the same language the user asks in (Urdu or English)
-- Keep answers clear, structured and to the point
-- Use bullet points for lists
-- Use bold text for important information
-- Never make up information that is not in the context"""
-
-    chat_history.append({
-        "role": "user",
-        "content": f"Context:\n{context}\n\nQuestion: {question}"
-    })
+- Keep answers clear and concise
+- Format answers with bullet points where appropriate"""
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
             {"role": "system", "content": system_prompt},
-            *chat_history
+            {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"}
         ],
-        max_tokens=1024,
-        temperature=0.3
+        max_tokens=512,
+        temperature=0.5
     )
 
     answer = response.choices[0].message.content
-    chat_history.append({"role": "assistant", "content": answer})
 
     return {"answer": answer}
 

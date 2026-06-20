@@ -34,7 +34,7 @@
     
 #     return matches
 
-# # Search for the person
-# if __name__ == "__main__":
-#     search_keyword("Poma Panezai")
+# Search for the person
+if __name__ == "__main__":
+    search_keyword("tell me about vice chancellor")
     

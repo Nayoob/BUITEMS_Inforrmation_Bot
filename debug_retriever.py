@@ -105,13 +105,13 @@
 #     sources = set([m["source"] for m in all_results["metadatas"]])
 #     print(f"Unique sources in DB: {sources}")
 
-# # Test cases
-# if __name__ == "__main__":
-#     # Replace with your actual queries
-#     test_questions = [
-#         "How international students can apply for admission?",
-#         # Add more test queries here
-#     ]
+# Test cases
+if __name__ == "__main__":
+    # Replace with your actual queries
+    test_questions = [
+        "tell me about vice chancellor",  # Should find relevant info about the vice chancellor
+        # Add more test queries here
+    ]
     
 #     for q in test_questions:
 #         if "[" not in q:  # Only run non-placeholder queries
