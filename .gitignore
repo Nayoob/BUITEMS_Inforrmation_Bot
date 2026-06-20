@@ -2,13 +2,13 @@
 venv/
 
 # Vector database (each user generates their own)
-# vectordb/
+vectordb/
 
 # Environment variables (NEVER push this)
 .env
 
 # # PDFs (optional - remove this line if you want to share PDFs)
-pdfs/
+
 
 # Frontend dependencies - must install FontAwesome and Marked.js manually
 frontend/vendor/

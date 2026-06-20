@@ -33,23 +33,45 @@ def extract_text(pdf_path):
     return text
 
 def chunk_text(text, chunk_size=1500, overlap=300):
+    """
+    Smart chunking that respects semantic boundaries (paragraphs, sections).
+    Tries to keep related bullet points together.
+    """
     chunks = []
-    start = 0
-    while start < len(text):
-        end = start + chunk_size
-        chunk = text[start:end]
-        if chunk.strip():
-            chunks.append(chunk)
-        start += chunk_size - overlap
+    
+    # Split by double newlines first (section/paragraph boundaries)
+    sections = text.split('\n\n')
+    
+    current_chunk = ""
+    for section in sections:
+        # If adding this section keeps us under chunk_size, add it
+        if len(current_chunk) + len(section) < chunk_size:
+            current_chunk += section + "\n\n"
+        else:
+            # If current chunk has content, save it
+            if current_chunk.strip():
+                chunks.append(current_chunk.strip())
+            # Start new chunk with this section
+            current_chunk = section + "\n\n"
+    
+    # Don't forget the last chunk
+    if current_chunk.strip():
+        chunks.append(current_chunk.strip())
+    
+    # Remove empty chunks
+    chunks = [c for c in chunks if c.strip()]
+    
     return chunks
 
-# All PDFs in one folder
+# Recursively find all PDFs in subdirectories
 pdf_folder = "./pdfs"
-all_pdfs = [
-    os.path.join(pdf_folder, f)
-    for f in os.listdir(pdf_folder)
-    if f.endswith(".pdf")
-]
+all_pdfs = []
+
+for root, dirs, files in os.walk(pdf_folder):
+    for f in files:
+        if f.endswith(".pdf"):
+            pdf_path = os.path.join(root, f)
+            all_pdfs.append(pdf_path)
 
 print(f"Found {len(all_pdfs)} PDFs\n")
 
@@ -58,7 +80,12 @@ if not all_pdfs:
 else:
     for idx, pdf_path in enumerate(all_pdfs, 1):
         try:
-            print(f"[{idx}/{len(all_pdfs)}] Processing: {os.path.basename(pdf_path)}")
+            # Extract content type from subdirectory name
+            relative_path = os.path.relpath(pdf_path, pdf_folder)
+            content_type = os.path.dirname(relative_path)
+            pdf_name = os.path.basename(pdf_path)
+            
+            print(f"[{idx}/{len(all_pdfs)}] Processing: {relative_path}")
 
             text = extract_text(pdf_path)
 
@@ -75,8 +102,14 @@ else:
                 show_progress_bar=False
             ).tolist()
 
-            ids = [f"{os.path.basename(pdf_path)}_chunk_{i}" for i in range(len(chunks))]
-            metadatas = [{"source": os.path.basename(pdf_path)} for _ in chunks]
+            ids = [f"{pdf_name}_chunk_{i}" for i in range(len(chunks))]
+            metadatas = [
+                {
+                    "source": pdf_name,
+                    "content_type": content_type
+                } 
+                for _ in chunks
+            ]
 
             collection.add(
                 ids=ids,
@@ -87,7 +120,7 @@ else:
 
             print(f"  → Stored ✅\n")
         except Exception as e:
-            print(f"  ❌ Error processing {os.path.basename(pdf_path)}: {e}\n")
+            print(f"  ❌ Error processing {relative_path}: {e}\n")
             continue
 
 print("=" * 50)
