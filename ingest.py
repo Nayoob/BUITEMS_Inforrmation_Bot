@@ -1,5 +1,3 @@
-# ingest
-
 import os
 import pdfplumber
 import chromadb
@@ -88,7 +86,7 @@ def chunk_text(text, chunk_size=800, overlap=150):
     return chunks
 
 # Recursively find all PDFs in subdirectories
-pdf_folder = "./expdf"
+pdf_folder = "./pdfs"
 all_pdfs = []
 
 for root, dirs, files in os.walk(pdf_folder):
